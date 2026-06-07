@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic Documentation Pipeline — Overview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+  :root {
+    --navy:#0D1B2A; --navy2:#1B2D42; --blue:#1A6FA8; --blue-lt:#2E9CCC;
+    --teal:#0A8473; --teal-lt:#13B89F; --amber:#C47D0A; --amber-lt:#F0A820;
+    --coral:#C44A2B; --coral-lt:#E86840; --green:#1A7A3C; --green-lt:#28A854;
+    --purple:#5C3D8F; --purple-lt:#8A5FC7; --gray:#8A9BB0; --gray-lt:#B8C6D6;
+    --bg:#F4F6FA; --surface:#FFFFFF; --surface2:#EEF1F7; --border:#D4DCE8;
+    --text:#0D1B2A; --text2:#4A5A6E; --text3:#7A8A9E;
+    --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;}
+  .page{max-width:1100px;margin:0 auto;padding:48px 32px;}
+  .header{margin-bottom:40px;border-left:4px solid var(--blue);padding-left:20px;}
+  .header-tag{font-family:var(--mono);font-size:11px;color:var(--blue-lt);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;}
+  .header h1{font-size:28px;font-weight:600;color:var(--navy);line-height:1.2;margin-bottom:6px;}
+  .header-sub{font-size:14px;color:var(--text2);}
+  .badge{display:inline-block;background:var(--amber);color:#fff;font-size:10px;font-weight:600;padding:2px 10px;border-radius:20px;margin-left:10px;font-family:var(--mono);}
+  .main-grid{display:grid;grid-template-columns:1fr 300px;gap:32px;align-items:start;}
+  .pipeline-label{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:16px;}
+  .agent-card{display:grid;grid-template-columns:52px 1fr;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:4px;overflow:hidden;cursor:pointer;transition:border-color .15s;}
+  .agent-card:hover{border-color:var(--blue-lt);}
+  .agent-card.active{border-color:var(--blue);box-shadow:0 0 0 2px rgba(26,111,168,.12);}
+  .connector{width:2px;height:14px;background:var(--border);margin:0 0 0 25px;}
+  .gate-connector{width:2px;height:14px;background:var(--amber-lt);margin:0 0 0 25px;}
+  .agent-id-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:14px 0;border-right:1px solid var(--border);}
+  .agent-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:500;}
+  .agent-type{font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:5px;text-align:center;padding:0 3px;}
+  .agent-body{padding:12px 14px;}
+  .agent-header{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}
+  .agent-name{font-size:13px;font-weight:600;color:var(--navy);font-family:var(--mono);}
+  .agent-desc{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:6px;}
+  .tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;}
+  .tag{font-family:var(--mono);font-size:10px;padding:1px 7px;border-radius:3px;border:1px solid var(--border);color:var(--text2);background:var(--surface2);}
+  .tag.tool{background:#E8F3FC;color:var(--blue);border-color:#B8D8F4;}
+  .tag.good{background:#E6F5EC;color:var(--green);border-color:#A8DEB8;}
+  .tag.warn{background:#FEF3DC;color:var(--amber);border-color:#F8DCA0;}
+  .tag.purple{background:#F3EDF8;color:var(--purple);border-color:#D4B8EE;}
+  .expand-btn{font-family:var(--mono);font-size:10px;color:var(--blue);cursor:pointer;border:none;background:none;padding:0;display:flex;align-items:center;gap:3px;}
+  .arrow{display:inline-block;transition:transform .2s;}
+  .arrow.open{transform:rotate(90deg);}
+  .detail{display:none;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;color:var(--text2);line-height:1.6;}
+  .detail.open{display:block;}
+  .detail strong{color:var(--navy);font-weight:600;}
+  .detail code{font-family:var(--mono);font-size:10px;background:var(--surface2);padding:1px 4px;border-radius:3px;color:var(--blue);}
+  .gate-card{background:#FFFBF0;border:1px solid var(--amber-lt);border-radius:10px;padding:14px 16px;margin-bottom:4px;}
+  .gate-title{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--amber);margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+  .gate-desc{font-size:12px;color:var(--text2);line-height:1.5;}
+  .sidebar{display:flex;flex-direction:column;gap:18px;}
+  .scard{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+  .scard-title{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .metric{background:var(--surface2);border-radius:8px;padding:10px;text-align:center;}
+  .metric.hi{background:var(--navy);}
+  .metric-val{font-family:var(--mono);font-size:24px;font-weight:600;color:var(--navy);line-height:1;margin-bottom:3px;}
+  .metric.hi .metric-val{color:#fff;}
+  .metric-lbl{font-size:10px;color:var(--text3);}
+  .metric.hi .metric-lbl{color:var(--gray-lt);}
+  .principle{padding:10px 0;border-bottom:1px solid var(--border);}
+  .principle:last-child{border-bottom:none;padding-bottom:0;}
+  .p-title{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--navy);margin-bottom:3px;}
+  .p-desc{font-size:11px;color:var(--text3);line-height:1.5;}
+  .stack-item{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;}
+  .stack-item:last-child{border-bottom:none;}
+  .stack-key{color:var(--text3);}
+  .stack-val{font-family:var(--mono);font-size:11px;color:var(--navy);font-weight:500;}
+  .footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text3);}
+  .num-00{background:#E8F3FC;color:var(--blue);}
+  .num-01{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+  .num-02{background:#E6F5EC;color:var(--green);}
+  .num-03{background:#FEF3DC;color:var(--amber);}
+  .num-04{background:#F3EDF8;color:var(--purple);}
+  .num-05{background:#E0F5F2;color:var(--teal);}
+  .num-06{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="header-tag">Portfolio · Agentic Systems</div>
+    <h1>Agentic Documentation Pipeline <span class="badge">Runner-Up 2026</span></h1>
+    <div class="header-sub">Seven-agent orchestration system · Deterministic triage · Human-in-the-loop governance · 318 tests</div>
+  </div>
+
+  <div class="main-grid">
+    <div>
+      <div class="pipeline-label">Pipeline · Click any agent to expand</div>
+
+      <!-- Agent 00 -->
+      <div class="agent-card" onclick="toggle('d00',this)">
+        <div class="agent-id-col"><div class="agent-num num-00">00</div><div class="agent-type">ORCH</div></div>
+        <div class="agent-body">
+          <div class="agent-header"><span class="agent-name">Orchestrator</span><span class="tag">entry point</span><span class="tag">routing</span></div>
+          <div class="agent-desc">Receives the product change event, validates the payload, interprets the routing manifest, and dispatches downstream agents. Confidence-gates every stage transition.</div>
+          <div class="tags"><span class="tag tool">confidence gating</span><span class="tag tool">payload validation</span><span class="tag tool">sequencing</span></div>
+          <button class="expand-btn"><span class="arrow" id="a00">▶</span> details</button>
+          <div class="detail" id="d00">
+            <strong>Key behaviour:</strong> constructs the minimal execution plan from the routing manifest — not every agent fires on every run. A change requiring only a communications message dispatches Agent 04 only.<br><br>
+            <strong>Confidence gating:</strong> low-confidence signals escalate to human review before any downstream agent fires. Early escalation prevents low-quality inputs from consuming pipeline compute.<br><br>
+            <strong>Handoff isolation:</strong> agents do not communicate directly. All context flows through the Orchestrator. Every handoff package is constructed and logged here.
+          </div>
+        </div>
+      </div>
+      <div class="connector"></div>
+
+      <!-- Agent 01 -->
+      <div class="agent-card" onclick="toggle('d01',this)">
+        <div class="agent-id-col"><div class="agent-num num-01">01</div><div class="agent-type">DET</div></div>
+        <div class="agent-body">
+          <div class="agent-header"><span class="agent-name">Intake · Triage</span><span class="tag good">zero LLM</span><span class="tag">deterministic</span></div>
+          <div class="agent-desc">Eight rule-based detectors classify the incoming change event and produce a typed routing manifest. Every routing decision is auditable and unit-testable.</div>
+          <div class="tags"><span class="tag good">8 detectors</span><span class="tag good">fully auditable</span><span class="tag tool">routing manifest</span></div>
+          <button class="expand-btn"><span class="arrow" id="a01">▶</span> details</button>
+          <div class="detail" id="d01">
+            <strong>Detectors:</strong> change_type · scope · audience · urgency · notify_trigger · content_trigger · review_trigger · escalation_trigger<br><br>
+            <strong>Why no LLM:</strong> routing is the most consequential decision in the pipeline. A routing error propagates through every downstream stage. Deterministic detectors make routing errors rare, visible, and debuggable.<br><br>
+            <strong>Uncertain outputs:</strong> <code>uncertain</code> is a valid output for notify and content triggers — not an error. Ambiguous signals route to confidence gating rather than forcing a wrong binary answer.
+          </div>
+        </div>
+      </div>
+      <div class="connector"></div>
+
+      <!-- Agent 02 -->
+      <div class="agent-card" onclick="toggle('d02',this)">
+        <div class="agent-id-col"><div class="agent-num num-02">02</div><div class="agent-type">LLM</div></div>
+        <div class="agent-body">
+          <div class="agent-header"><span class="agent-name">Impact Analysis</span><span class="tag">vector search</span><span class="tag">severity scoring</span></div>
+          <div class="agent-desc">Semantic search across the documentation corpus. Identifies affected pages, scores by severity, and produces a ranked impact manifest with per-page change rationales.</div>
+          <div class="tags"><span class="tag tool">corpus search</span><span class="tag warn">severity: critical · high · medium · low</span></div>
+          <button class="expand-btn"><span class="arrow" id="a02">▶</span> details</button>
+          <div class="detail" id="d02">
+            <strong>Search strategy:</strong> scope-parameterised vector search. Single-product changes search within the affected content area; platform-wide changes search the full corpus.<br><br>
+            <strong>Conservative threshold:</strong> the agent errs toward inclusion. A false positive (incorrect inclusion) surfaces at the approval gate and is dismissed. A false negative (missed page) is a silent documentation gap.<br><br>
+            <strong>Change rationale:</strong> each affected page receives a one-sentence rationale explaining why it is flagged — surfaced to the writer at the approval gate for fast triage.
+          </div>
+        </div>
+      </div>
+      <div class="connector"></div>
+
+      <!-- Agent 03 -->
+      <div class="agent-card" onclick="toggle('d03',this)">
+        <div class="agent-id-col"><div class="agent-num num-03">03</div><div class="agent-type">LLM</div></div>
+        <div class="agent-body">
+          <div class="agent-header"><span class="agent-name">Content Prep</span><span class="tag">diff output</span><span class="tag tool">MCP retrieval</span></div>
+          <div class="agent-desc">Drafts documentation updates as structured DIFF packages — current content, proposed content, rationale, confidence score. Live page retrieval via MCP tool call.</div>
+          <div class="tags"><span class="tag tool">live page fetch</span><span class="tag tool">structured DIFF</span><span class="tag">dependency flagging</span></div>
+          <button class="expand-btn"><span class="arrow" id="a03">▶</span> details</button>
+          <div class="detail" id="d03">
+            <strong>Minimal change principle:</strong> the agent makes the smallest change that accurately reflects the product update. No restructuring, no style improvements beyond scope.<br><br>
+            <strong>Live retrieval:</strong> page content is fetched at runtime via MCP — not from cache. Drafts are always based on the current corpus state.<br><br>
+            <strong>DIFF format:</strong> structured JSON with <code>current_content</code>, <code>proposed_content</code>, <code>change_rationale</code>, and <code>confidence</code>. Writers see exactly what changes — not a full page rewrite.
+          </div>
+        </div>
+      </div>
+      <div class="connector"></div>
+
+      <!-- Agent 04 -->
+      <div class="agent-card" onclick="toggle('d04',this)">
+        <div class="agent-id-col"><div class="agent-num num-04">04</div><div class="agent-type">LLM</div></div>
+        <div class="agent-body">
+          <div class="agent-header"><span class="agent-name">Communications</span><span class="tag purple">voice constrained</span><span class="tag">2 sub-agents</span></div>
+          <div class="agent-desc">Drafts client-facing communications messages. Pre-script handles template selection and variable extraction; two sub-agents handle drafting and voice normalisation.</div>
+          <div class="tags"><span class="tag tool">pre-script</span><span class="tag purple">voice normalisation</span><span class="tag good">post-script envelope</span></div>
+          <button class="expand-btn"><span class="arrow" id="a04">▶</span> details</button>
+          <div class="detail" id="d04">
+            <strong>Pattern C applied:</strong> deterministic pre-script extracts and structures inputs before the LLM fires. Deterministic post-script constructs the output envelope. LLM budget reserved for drafting and normalisation only.<br><br>
+            <strong>Two sub-agents:</strong> draft generation and voice normalisation are separate cognitive tasks. A single agent asked to do both tends to over-normalise during drafting or under-normalise during review.<br><br>
+            <strong>No send capability:</strong> the agent drafts only. Email dispatch is a post-approval action outside the pipeline.
+          </div>
+        </div>
+      </div>
+
+      <!-- Gate -->
+      <div class="gate-connector"></div>
+      <div class="gate-card">
+        <div class="gate-title">✋ Human Approval Gate</div>
+        <div class="gate-desc">Pipeline stops here. Writer reviews the impact manifest, content DIFF package, and communications draft. Every component requires an explicit approve / edit / reject decision. Nothing proceeds without it. This gate is architectural — not a policy toggle.</div>
+      </div>
+      <div class="gate-connector"></div>
+
+      <!-- Agent 05 -->
+      <div class="agent-card" onclick="toggle('d05',this)">
+        <div class="agent-id-col"><div class="agent-num num-05">05</div><div class="agent-type">LLM</div></div>
+        <div class="agent-body">
+          <div class="agent-header"><span class="agent-name">Quality Review</span><span class="tag">77 rules</span><span class="tag">3 sub-agents</span></div>
+          <div class="agent-desc">Evaluates approved content against a structured rule corpus — 39 prose rules, 19 style rules, 19 terminology rules. Three parallel sub-agents, one per category.</div>
+          <div class="tags"><span class="tag tool">parallel execution</span><span class="tag tool">rule-referenced findings</span><span class="tag good">traceable to rule IDs</span></div>
+          <button class="expand-btn"><span class="arrow" id="a05">▶</span> details</button>
+          <div class="detail" id="d05">
+            <strong>Parallel sub-agents:</strong> prose, style, and terminology sub-agents run concurrently. No inter-agent dependencies. Total latency equals one sub-agent call, not three sequential calls.<br><br>
+            <strong>Rule-referenced findings:</strong> every finding is tagged with a rule ID, severity level, location, and remediation suggestion. Findings are machine-readable — not a paragraph of feedback.<br><br>
+            <strong>Why post-gate:</strong> running quality review before approval would evaluate content the writer may edit. Post-gate review evaluates the content the writer actually approved.
+          </div>
+        </div>
+      </div>
+      <div class="connector"></div>
+
+      <!-- Agent 06 -->
+      <div class="agent-card" onclick="toggle('d06',this)">
+        <div class="agent-id-col"><div class="agent-num num-06">06</div><div class="agent-type">GOV</div></div>
+        <div class="agent-body">
+          <div class="agent-header"><span class="agent-name">Governance</span><span class="tag">audit log</span><span class="tag">health metrics</span></div>
+          <div class="agent-desc">Assembles the complete run log, detects anomalies against thresholds, publishes health metrics, and writes the append-only corpus change record.</div>
+          <div class="tags"><span class="tag tool">run log</span><span class="tag warn">anomaly detection</span><span class="tag good">corpus change record</span></div>
+          <button class="expand-btn"><span class="arrow" id="a06">▶</span> details</button>
+          <div class="detail" id="d06">
+            <strong>Append-only record:</strong> the corpus change record cannot be edited. Every published update is traceable to the product change event that triggered it, the writer who approved it, and the timestamp.<br><br>
+            <strong>Anomaly thresholds:</strong> token consumption, pipeline duration, confidence scores, approval edit rate, quality findings severity — all evaluated against baselines. Flagged runs surface in the health dashboard.<br><br>
+            <strong>Maintenance signal:</strong> high approval edit rates on a specific agent's output are the clearest signal that a prompt needs tuning. Governance makes that signal visible.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="scard">
+        <div class="scard-title">Pipeline Metrics</div>
+        <div class="metrics">
+          <div class="metric hi"><div class="metric-val">7</div><div class="metric-lbl">agents</div></div>
+          <div class="metric hi"><div class="metric-val">318</div><div class="metric-lbl">tests</div></div>
+          <div class="metric"><div class="metric-val">78%</div><div class="metric-lbl">token reduction</div></div>
+          <div class="metric"><div class="metric-val">77</div><div class="metric-lbl">quality rules</div></div>
+          <div class="metric"><div class="metric-val">8</div><div class="metric-lbl">det. detectors</div></div>
+          <div class="metric"><div class="metric-val">0</div><div class="metric-lbl">LLM in triage</div></div>
+        </div>
+      </div>
+
+      <div class="scard">
+        <div class="scard-title">Design Principles</div>
+        <div class="principle">
+          <div class="p-title">Pattern C — Deterministic-first</div>
+          <div class="p-desc">Determinism where cheap, LLM where judgment required. Triage layer uses zero LLM.</div>
+        </div>
+        <div class="principle">
+          <div class="p-title">Human-in-the-loop by design</div>
+          <div class="p-desc">Approval gate is architectural — not a policy toggle, not bypassable.</div>
+        </div>
+        <div class="principle">
+          <div class="p-title">Bounded agent scope</div>
+          <div class="p-desc">Each agent has one job. No agent knows the full pipeline state.</div>
+        </div>
+        <div class="principle">
+          <div class="p-title">Audit-first</div>
+          <div class="p-desc">Every run produces a complete, traceable log. Nothing is a black box.</div>
+        </div>
+      </div>
+
+      <div class="scard">
+        <div class="scard-title">Technical Stack</div>
+        <div class="stack-item"><span class="stack-key">Agent platform</span><span class="stack-val">Skills-type · A2A</span></div>
+        <div class="stack-item"><span class="stack-key">Tool protocol</span><span class="stack-val">MCP · FastMCP</span></div>
+        <div class="stack-item"><span class="stack-key">Pre/post scripts</span><span class="stack-val">Python</span></div>
+        <div class="stack-item"><span class="stack-key">Dashboard</span><span class="stack-val">Vue · TypeScript</span></div>
+        <div class="stack-item"><span class="stack-key">Retrieval</span><span class="stack-val">Vector search</span></div>
+        <div class="stack-item"><span class="stack-key">Tests</span><span class="stack-val">318 · all green</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>agentic-docs-pipeline · anonymised portfolio</span>
+    <span>production work on private enterprise infrastructure</span>
+  </div>
+</div>
+
+<script>
+function toggle(id, card) {
+  const detail = document.getElementById(id);
+  const agentNum = id.replace('d','');
+  const arrow = document.getElementById('a' + agentNum);
+  const isOpen = detail.classList.contains('open');
+  detail.classList.toggle('open', !isOpen);
+  arrow.classList.toggle('open', !isOpen);
+  card.classList.toggle('active', !isOpen);
+}
+</script>
+</body>
+</html>  
