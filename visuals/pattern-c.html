@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pattern C — Deterministic-First Design</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+  :root {
+    --navy:#0D1B2A; --blue:#1A6FA8; --blue-lt:#2E9CCC; --amber:#C47D0A; --amber-lt:#F0A820;
+    --green:#1A7A3C; --green-lt:#28A854; --coral:#C44A2B; --coral-lt:#E86840;
+    --bg:#F4F6FA; --surface:#FFFFFF; --surface2:#EEF1F7; --border:#D4DCE8;
+    --text:#0D1B2A; --text2:#4A5A6E; --text3:#7A8A9E;
+    --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;}
+  .page{max-width:960px;margin:0 auto;padding:48px 32px;}
+  .header{margin-bottom:40px;border-left:4px solid var(--green-lt);padding-left:20px;}
+  .header-tag{font-family:var(--mono);font-size:11px;color:var(--green-lt);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;}
+  .header h1{font-size:28px;font-weight:600;color:var(--navy);margin-bottom:6px;}
+  .header-sub{font-size:14px;color:var(--text2);}
+
+  .pattern-def{background:var(--navy);color:#fff;border-radius:12px;padding:24px 28px;margin-bottom:32px;}
+  .def-rule{font-family:var(--mono);font-size:15px;font-weight:500;line-height:1.5;margin-bottom:12px;}
+  .def-rule span{color:var(--amber-lt);}
+  .def-sub{font-size:13px;color:var(--gray-lt,#B8C6D6);line-height:1.6;}
+
+  .three-layers{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:32px;}
+  .layer-card{border-radius:10px;padding:18px;border:1px solid var(--border);}
+  .lc-det{background:#E6F5EC;border-color:#A8DEB8;}
+  .lc-llm{background:#E8F3FC;border-color:#B8D8F4;}
+  .lc-det2{background:#E6F5EC;border-color:#A8DEB8;}
+  .lc-title{font-family:var(--mono);font-size:11px;font-weight:500;margin-bottom:4px;}
+  .lc-det .lc-title{color:var(--green);}
+  .lc-llm .lc-title{color:var(--blue);}
+  .lc-tag{font-family:var(--mono);font-size:9px;padding:1px 7px;border-radius:10px;display:inline-block;margin-bottom:10px;}
+  .lc-det .lc-tag{background:var(--green-lt);color:#fff;}
+  .lc-llm .lc-tag{background:var(--blue-lt);color:#fff;}
+  .lc-items{list-style:none;}
+  .lc-items li{font-size:11px;color:var(--text2);padding:3px 0;border-bottom:1px solid rgba(0,0,0,.06);}
+  .lc-items li:last-child{border-bottom:none;}
+  .lc-items li::before{content:"·  ";color:var(--text3);}
+
+  .arrow-mid{text-align:center;font-size:22px;color:var(--border);padding:4px 0;}
+
+  .example-section{margin-bottom:32px;}
+  .section-title{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:16px;}
+
+  .example-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;}
+  .ex-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);}
+  .ex-title{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--navy);}
+  .ex-badge{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:10px;}
+  .badge-det{background:#E6F5EC;color:var(--green);}
+  .badge-llm{background:#E8F3FC;color:var(--blue);}
+  .ex-body{padding:14px 16px;}
+  .ex-flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .flow-box{font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);}
+  .flow-box.det{background:#E6F5EC;color:var(--green);border-color:#A8DEB8;}
+  .flow-box.llm{background:#E8F3FC;color:var(--blue);border-color:#B8D8F4;}
+  .flow-box.gate{background:#FEF3DC;color:var(--amber);border-color:#F8DCA0;}
+  .flow-arrow{color:var(--text3);font-size:12px;}
+  .ex-note{font-size:12px;color:var(--text2);line-height:1.6;}
+
+  .test-question{background:var(--navy);color:#fff;border-radius:10px;padding:20px 24px;margin-bottom:32px;}
+  .tq-label{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber-lt);margin-bottom:8px;}
+  .tq-q{font-size:16px;font-weight:500;margin-bottom:12px;}
+  .tq-answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .tq-yes{background:#1A7A3C;border-radius:8px;padding:12px 14px;}
+  .tq-no{background:#2E3A4A;border-radius:8px;padding:12px 14px;}
+  .tq-ans-label{font-family:var(--mono);font-size:10px;margin-bottom:4px;}
+  .tq-yes .tq-ans-label{color:var(--green-lt);}
+  .tq-no .tq-ans-label{color:var(--amber-lt);}
+  .tq-ans{font-size:12px;color:rgba(255,255,255,.85);line-height:1.5;}
+
+  .compare-table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:32px;}
+  .compare-table th{text-align:left;padding:10px 14px;background:var(--surface2);font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--text3);border-bottom:1px solid var(--border);}
+  .compare-table td{padding:10px 14px;font-size:12px;border-bottom:1px solid var(--border);color:var(--text2);}
+  .compare-table tr:last-child td{border-bottom:none;}
+  .compare-table td:first-child{font-family:var(--mono);font-size:11px;color:var(--navy);font-weight:500;}
+  .val-det{color:var(--green);font-family:var(--mono);font-size:11px;}
+  .val-llm{color:var(--blue);font-family:var(--mono);font-size:11px;}
+
+  .footer{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text3);}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="header-tag">Portfolio · Design Pattern</div>
+    <h1>Pattern C — Deterministic-First</h1>
+    <div class="header-sub">The architectural pattern behind the agentic documentation pipeline</div>
+  </div>
+
+  <div class="pattern-def">
+    <div class="def-rule">Default to <span>deterministic</span>. Use LLM only where judgment is genuinely required and cannot be reduced to a rule.</div>
+    <div class="def-sub">LLMs are powerful but expensive, non-deterministic, and opaque. In a production pipeline, those properties compound. Pattern C constrains LLM usage to the stages where it earns its cost — and makes everything else a deterministic function of the input.</div>
+  </div>
+
+  <div class="section-title">The three-layer structure</div>
+  <div class="three-layers">
+    <div class="layer-card lc-det">
+      <div class="lc-title">Pre-script</div>
+      <div><span class="lc-tag">deterministic</span></div>
+      <ul class="lc-items">
+        <li>Input validation</li>
+        <li>Variable extraction</li>
+        <li>Template selection</li>
+        <li>Flag deduplication</li>
+        <li>Context assembly</li>
+        <li>Unit-testable</li>
+      </ul>
+    </div>
+    <div class="layer-card lc-llm">
+      <div class="lc-title">Bounded agent</div>
+      <div><span class="lc-tag">LLM · constrained</span></div>
+      <ul class="lc-items">
+        <li>Single bounded task</li>
+        <li>Receives clean context</li>
+        <li>No full pipeline state</li>
+        <li>Produces one output</li>
+        <li>Confidence-scored</li>
+        <li>Integration-testable</li>
+      </ul>
+    </div>
+    <div class="layer-card lc-det2">
+      <div class="lc-title">Post-script</div>
+      <div><span class="lc-tag">deterministic</span></div>
+      <ul class="lc-items">
+        <li>Output validation</li>
+        <li>Schema enforcement</li>
+        <li>Envelope construction</li>
+        <li>Anomaly flagging</li>
+        <li>Audit log entry</li>
+        <li>Unit-testable</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="example-section">
+    <div class="section-title">Applied examples</div>
+
+    <div class="example-card">
+      <div class="ex-header">
+        <span class="ex-title">Intake triage — eight detectors, zero LLM</span>
+        <span class="ex-badge badge-det">fully deterministic</span>
+      </div>
+      <div class="ex-body">
+        <div class="ex-flow">
+          <span class="flow-box">raw change event</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box det">detect_change_type</span>
+          <span class="flow-box det">detect_scope</span>
+          <span class="flow-box det">detect_audience</span>
+          <span class="flow-box det">detect_urgency</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box det">detect_notify_trigger</span>
+          <span class="flow-box det">detect_content_trigger</span>
+          <span class="flow-box det">detect_review_trigger</span>
+          <span class="flow-box det">detect_escalation_trigger</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box">routing manifest</span>
+        </div>
+        <div class="ex-note">Routing is the most consequential decision in the pipeline — a wrong route propagates through every downstream stage. Eight deterministic detectors make every routing decision auditable and unit-testable. <code style="font-family:var(--mono);font-size:10px;background:var(--surface2);padding:1px 4px;border-radius:3px;">uncertain</code> is a first-class output: ambiguous signals escalate to confidence gating rather than forcing a wrong binary answer.</div>
+      </div>
+    </div>
+
+    <div class="example-card">
+      <div class="ex-header">
+        <span class="ex-title">Communications drafting — pre-script + two sub-agents + post-script</span>
+        <span class="ex-badge badge-llm">Pattern C applied</span>
+      </div>
+      <div class="ex-body">
+        <div class="ex-flow">
+          <span class="flow-box">raw event payload</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box det">pre-script · template selection · variable extraction</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box llm">sub-agent A · draft generation</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box llm">sub-agent B · voice normalisation</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box det">post-script · envelope construction</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box gate">approval gate</span>
+        </div>
+        <div class="ex-note">The pre-script extracts and structures exactly what the drafting agent needs — no noise, no irrelevant fields. Drafting and voice normalisation are separate agents because they are different cognitive tasks; a single agent asked to do both tends to over-normalise during drafting or under-normalise during review. The post-script constructs the output envelope deterministically — no LLM needed for that.</div>
+      </div>
+    </div>
+
+    <div class="example-card">
+      <div class="ex-header">
+        <span class="ex-title">Quality review — three parallel sub-agents, one rule category each</span>
+        <span class="ex-badge badge-llm">parallel · bounded</span>
+      </div>
+      <div class="ex-body">
+        <div class="ex-flow">
+          <span class="flow-box">approved content</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box llm">prose sub-agent · 39 rules</span>
+          <span class="flow-box llm">style sub-agent · 19 rules</span>
+          <span class="flow-box llm">terminology · 19 rules</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box det">post-script · consolidate findings</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box">findings payload · rule IDs · severity</span>
+        </div>
+        <div class="ex-note">77 rules across three categories. A single agent evaluating all 77 rules faces context window pressure and rule interference. Three bounded sub-agents run in parallel — total latency equals one sub-agent call, not three sequential calls. Each finding is tagged with a rule ID, location, and confidence score. The post-script consolidates into a single structured payload.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-question">
+    <div class="tq-label">The Pattern C test</div>
+    <div class="tq-q">Can you write a unit test for this decision?</div>
+    <div class="tq-answers">
+      <div class="tq-yes">
+        <div class="tq-ans-label">YES → deterministic</div>
+        <div class="tq-ans">The decision is a function of the input. Write it as a rule-based detector or script. It will be faster, cheaper, and fully auditable.</div>
+      </div>
+      <div class="tq-no">
+        <div class="tq-ans-label">NO → consider LLM</div>
+        <div class="tq-ans">The decision requires reading and understanding context. A bounded LLM agent is justified. Keep it narrow — one task, clean inputs, confidence-scored output.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Deterministic vs. LLM — property comparison</div>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Property</th>
+        <th>Deterministic (pre/post scripts)</th>
+        <th>LLM (bounded agents)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Cost per call</td><td class="val-det">Minimal</td><td class="val-llm">Significant</td></tr>
+      <tr><td>Latency</td><td class="val-det">Fast</td><td class="val-llm">Slow</td></tr>
+      <tr><td>Auditability</td><td class="val-det">Complete</td><td class="val-llm">Partial</td></tr>
+      <tr><td>Testability</td><td class="val-det">Unit-testable</td><td class="val-llm">Integration-testable</td></tr>
+      <tr><td>Reproducibility</td><td class="val-det">Same output every time</td><td class="val-llm">Non-deterministic</td></tr>
+      <tr><td>Use when</td><td class="val-det">Classification · validation · formatting</td><td class="val-llm">Drafting · scoring · reasoning</td></tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <span>agentic-docs-pipeline · pattern-c · anonymised portfolio</span>
+    <span>production work on private enterprise infrastructure</span>
+  </div>
+</div>
+</body>
+</html>  
